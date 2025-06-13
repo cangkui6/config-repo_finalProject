@@ -1,0 +1,21 @@
+# 用户服务配置
+server:
+  port: 9001
+
+spring:
+  application:
+    name: user-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/elm_user?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+  
+# 服务特定配置
+user:
+  service:
+    max-login-attempts: 5
+    token-expire-time: 3600
+    password-min-length: 6
+    
+# JWT配置
+jwt:
+  secret: user-service-secret-key-for-elm-system
+  expiration: 86400 

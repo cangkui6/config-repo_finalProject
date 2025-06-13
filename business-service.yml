@@ -1,0 +1,23 @@
+# 商家服务配置
+server:
+  port: 9004
+
+spring:
+  application:
+    name: business-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/elm_business?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+
+# 商家服务特定配置
+business:
+  service:
+    max-distance-km: 10
+    business-hours-start: "08:00"
+    business-hours-end: "22:00"
+    review-score-threshold: 3.5
+    
+# 地图API配置
+map:
+  api:
+    key: your-map-api-key
+    timeout: 5000 

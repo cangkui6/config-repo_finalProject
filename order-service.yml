@@ -1,0 +1,29 @@
+# 订单服务配置
+server:
+  port: 9003
+
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/elm_order?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+
+# 订单服务特定配置
+order:
+  service:
+    timeout-minutes: 30
+    max-order-items: 50
+    delivery-fee: 5.0
+    min-order-amount: 20.0
+
+# 消息队列配置
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    template:
+      retry:
+        enabled: true
+        max-attempts: 3 

@@ -1,0 +1,21 @@
+# 购物车服务配置
+server:
+  port: 9005
+
+spring:
+  application:
+    name: cart-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/elm_cart?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+  redis:
+    host: localhost
+    port: 6379
+    database: 2
+    timeout: 2000ms
+
+# 购物车服务特定配置
+cart:
+  service:
+    max-items: 99
+    expire-hours: 24
+    auto-clear-days: 7 
