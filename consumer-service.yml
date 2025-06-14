@@ -1,13 +1,13 @@
-# Consumer Service 动态配置
+# Consumer Service 动态配置 - 已增强版本
 consumer:
   config:
     serviceName: consumer-service
-    version: 2.0.0
+    version: 2.1.0
     environment: dev
     debugMode: true
     maxRetryCount: 5
     timeoutMs: 8000
-    customMessage: "🎉 配置已动态更新 - 测试成功！"
+    customMessage: "🎉 配置已动态更新 - 集群配置管理中心测试成功！"
     featureFlags:
       circuitBreakerEnabled: true
       cacheEnabled: false
@@ -37,6 +37,12 @@ spring:
         retry:
           enabled: true
           max-attempts: 3
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000
+        max-attempts: 3
+        max-interval: 10000
   cloud:
     bus:
       enabled: true
@@ -44,6 +50,21 @@ spring:
         enabled: true
       env:
         enabled: true
+      id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+      # 配置总线事件追踪
+      trace:
+        enabled: true
+    # 配置服务器高可用配置
+    config:
+      fail-fast: false
+      retry:
+        max-attempts: 6
+        initial-interval: 1000
+        max-interval: 2000
+        multiplier: 1.2
+      discovery:
+        enabled: true
+        service-id: config-server
 
 # Eureka配置
 eureka:
@@ -52,9 +73,19 @@ eureka:
       defaultZone: http://localhost:8761/eureka/,http://localhost:8762/eureka/
     fetch-registry: true
     register-with-eureka: true
+    registry-fetch-interval-seconds: 30
+    healthcheck:
+      enabled: true
   instance:
     prefer-ip-address: true
     instance-id: ${spring.cloud.client.ip-address}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    health-check-url-path: /actuator/health
+    metadata-map:
+      version: ${consumer.config.version}
+      environment: ${consumer.config.environment}
+      config-version: "2.1.0"
 
 # 管理端点配置
 management:
@@ -63,13 +94,33 @@ management:
       exposure:
         include: '*'
       base-path: /actuator
+      cors:
+        allowed-origins: "*"
+        allowed-methods: "GET,POST"
   endpoint:
     health:
       show-details: always
+      show-components: always
     refresh:
       enabled: true
     bus-refresh:
       enabled: true
+    info:
+      enabled: true
+    configprops:
+      enabled: true
+  health:
+    rabbit:
+      enabled: true
+    config:
+      enabled: true
+  info:
+    build:
+      enabled: true
+    env:
+      enabled: true
+    git:
+      mode: full
 
 # 日志配置
 logging:
@@ -77,4 +128,23 @@ logging:
     org.springframework.cloud.config: DEBUG
     org.springframework.cloud.bus: DEBUG
     org.springframework.amqp: DEBUG
-    com.elm.consumer: INFO 
+    com.elm.consumer: INFO
+    org.springframework.cloud.context: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
+
+# 应用自定义配置
+app:
+  config:
+    cluster:
+      enabled: true
+      nodes:
+        - config-server-8888
+        - config-server-8889
+    refresh:
+      enabled: true
+      interval: 30000
+    monitoring:
+      enabled: ${consumer.config.featureFlags.monitoringEnabled}
+      endpoint: "/actuator/metrics" 
