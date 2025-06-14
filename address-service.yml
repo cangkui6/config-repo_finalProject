@@ -1,32 +1,53 @@
 # 地址服务配置
 server:
-  port: 9006
+  port: 8006
 
 spring:
   application:
     name: address-service
   datasource:
-    url: jdbc:mysql://localhost:3306/elm_address?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+    url: jdbc:mysql://localhost:3306/elm_address?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+  redis:
+    database: 5  # 地址服务专用数据库
 
-# 地址服务特定配置
-address:
-  service:
-    max-addresses-per-user: 10
-    default-address-type: "HOME"
-    geo-validation-enabled: true
-    
 # 地理编码服务配置
 geocoding:
   api:
     provider: "baidu"
     key: "your-geocoding-api-key"
     timeout: 3000
+    max-retry: 3
+    backup-provider: "amap"
 
-# 熔断器配置
+# 地理编码服务特定熔断器配置
 resilience4j:
   circuitbreaker:
     instances:
-      address-service:
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 30000
-        sliding-window-size: 10 
+      geocoding-service:
+        failure-rate-threshold: 60  # 地理编码服务容错性更高
+        wait-duration-in-open-state: 60s
+        sliding-window-size: 20
+  retry:
+    instances:
+      geocoding-service:
+        max-attempts: 5
+        wait-duration: 2s
+
+# 地址服务配置
+address:
+  service:
+    max-addresses-per-user: 10
+    default-address-type: "HOME"
+    geo-validation-enabled: true
+    max-delivery-distance: 20
+    address-cache-hours: 6
+  # 动态配置
+  config:
+    enable-smart-suggestions: true
+    enable-location-history: true
+    max-search-results: 20
+    auto-complete-min-chars: 2
+    location:
+      enable-gps-validation: true
+      gps-accuracy-threshold: 100
+      enable-poi-search: true 

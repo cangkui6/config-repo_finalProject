@@ -1,29 +1,47 @@
 # 订单服务配置
 server:
-  port: 9003
+  port: 8004
 
 spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:mysql://localhost:3306/elm_order?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+    url: jdbc:mysql://localhost:3306/elm_order?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+  redis:
+    database: 3  # 订单服务专用数据库
 
-# 订单服务特定配置
+# 订单服务特定熔断器配置
+resilience4j:
+  circuitbreaker:
+    instances:
+      payment-service:
+        failure-rate-threshold: 30  # 支付服务要求更高可靠性
+        wait-duration-in-open-state: 60s
+        sliding-window-size: 20
+  retry:
+    instances:
+      payment-service:
+        max-attempts: 5
+        wait-duration: 2s
+
+# 订单服务配置
 order:
   service:
     timeout-minutes: 30
     max-order-items: 50
     delivery-fee: 5.0
     min-order-amount: 20.0
-
-# 消息队列配置
-spring:
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    template:
-      retry:
-        enabled: true
-        max-attempts: 3 
+    max-orders-per-page: 20
+    auto-confirm-hours: 24
+    refund-timeout-hours: 72
+  # 动态配置
+  config:
+    enable-auto-dispatch: true
+    enable-order-tracking: true
+    payment-timeout-minutes: 15
+    delivery-time-slots:
+      - "09:00-12:00"
+      - "12:00-15:00"
+      - "15:00-18:00"
+      - "18:00-21:00"
+    status-update-interval: 30 

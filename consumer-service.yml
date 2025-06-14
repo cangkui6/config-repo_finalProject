@@ -1,0 +1,80 @@
+# Consumer Service 动态配置
+consumer:
+  config:
+    serviceName: consumer-service
+    version: 2.0.0
+    environment: dev
+    debugMode: true
+    maxRetryCount: 5
+    timeoutMs: 8000
+    customMessage: "🎉 配置已动态更新 - 测试成功！"
+    featureFlags:
+      circuitBreakerEnabled: true
+      cacheEnabled: false
+      monitoringEnabled: true
+      loggingEnabled: true
+
+# 服务配置
+server:
+  port: 9001
+
+# Spring配置
+spring:
+  application:
+    name: consumer-service
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    connection-timeout: 15000
+    virtual-host: /
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        retry:
+          enabled: true
+          max-attempts: 3
+  cloud:
+    bus:
+      enabled: true
+      refresh:
+        enabled: true
+      env:
+        enabled: true
+
+# Eureka配置
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/,http://localhost:8762/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.cloud.client.ip-address}:${server.port}
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    refresh:
+      enabled: true
+    bus-refresh:
+      enabled: true
+
+# 日志配置
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG
+    org.springframework.cloud.bus: DEBUG
+    org.springframework.amqp: DEBUG
+    com.elm.consumer: INFO 

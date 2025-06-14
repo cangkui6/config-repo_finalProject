@@ -1,21 +1,39 @@
 # 用户服务配置
 server:
-  port: 9001
+  port: 8001
 
 spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:mysql://localhost:3306/elm_user?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8
+    url: jdbc:mysql://localhost:3306/elm_user?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+  redis:
+    database: 0  # 用户服务专用数据库
   
-# 服务特定配置
+# JWT配置
+jwt:
+  secret: user-service-secret-key-for-elm-system-2024
+  expiration: 86400
+  refresh-expiration: 604800
+
+# 服务特定熔断器配置（覆盖默认值）
+resilience4j:
+  circuitbreaker:
+    instances:
+      user-service:
+        failure-rate-threshold: 60  # 用户服务容错性更高
+
+# 用户服务配置
 user:
   service:
     max-login-attempts: 5
     token-expire-time: 3600
     password-min-length: 6
-    
-# JWT配置
-jwt:
-  secret: user-service-secret-key-for-elm-system
-  expiration: 86400 
+    session-timeout: 1800
+    max-users-per-page: 50
+  # 动态配置
+  config:
+    enable-registration: true
+    enable-email-verification: false
+    enable-sms-verification: true
+    max-concurrent-sessions: 3 
