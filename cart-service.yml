@@ -1,31 +1,47 @@
-# 购物车服务配置
+# 购物车服务专用配置
 server:
   port: 8005
 
 spring:
   application:
     name: cart-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/elm_cart?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
-  redis:
-    database: 4  # 购物车服务专用数据库
 
-# 购物车服务配置
+# 购物车服务特定配置
 cart:
   service:
-    max-items: 99
-    expire-hours: 24
-    auto-clear-days: 7
-    max-quantity-per-item: 20
-    enable-cross-business-cart: false
-    sync-interval-seconds: 30
-  # 动态配置
-  config:
-    enable-recommendations: true
-    enable-price-alerts: true
-    max-saved-carts: 5
-    auto-merge-similar-items: true
-    discount:
-      enable-bulk-discount: true
-      bulk-threshold: 5
-      bulk-discount-rate: 0.05 
+    name: "购物车服务"
+    description: "提供购物车管理、商品添加删除等功能"
+    features:
+      cart-management: true
+      item-operations: true
+      price-calculation: true
+      
+# 购物车业务规则配置
+rules:
+  cart:
+    max-items-per-cart: 30
+    max-quantity-per-item: 99
+    cart-expiry-hours: 24 # 购物车过期时间
+    auto-clean-expired: true
+    merge-same-items: true # 相同商品自动合并
+    
+# 价格计算配置
+pricing:
+  calculate-delivery-fee: true
+  apply-discounts: true
+  tax-calculation: false
+  rounding-rule: "HALF_UP" # 四舍五入规则
+  
+# 缓存配置
+cache:
+  cart:
+    ttl-minutes: 30 # 购物车缓存时间
+    max-size: 1000
+  pricing:
+    ttl-minutes: 10 # 价格缓存时间
+    
+# 通知配置
+notifications:
+  cart-reminder: true
+  price-change-alert: true
+  item-unavailable-alert: true 

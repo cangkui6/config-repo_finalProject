@@ -1,0 +1,145 @@
+# 网关服务专用配置
+server:
+  port: 9000
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      # 网关路由配置
+      routes:
+        # 用户服务路由
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: user-service
+                fallbackUri: /fallback/user
+        
+        # 商家服务路由
+        - id: business-service
+          uri: lb://business-service
+          predicates:
+            - Path=/api/business/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: business-service
+                fallbackUri: /fallback/business
+        
+        # 订单服务路由
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: order-service
+                fallbackUri: /fallback/order
+        
+        # 食品服务路由
+        - id: food-service
+          uri: lb://food-service
+          predicates:
+            - Path=/api/food/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: food-service
+                fallbackUri: /fallback/food
+        
+        # 购物车服务路由
+        - id: cart-service
+          uri: lb://cart-service
+          predicates:
+            - Path=/api/cart/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: cart-service
+                fallbackUri: /fallback/cart
+        
+        # 地址服务路由
+        - id: address-service
+          uri: lb://address-service
+          predicates:
+            - Path=/api/address/**
+          filters:
+            - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: address-service
+                fallbackUri: /fallback/address
+      
+      # 全局过滤器配置
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 100
+            redis-rate-limiter.burstCapacity: 200
+            redis-rate-limiter.requestedTokens: 1
+      
+      # 全局跨域配置
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+  
+  # Redis配置（用于限流）
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    password: ${REDIS_PASSWORD:}
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+
+# 网关服务特定配置
+gateway:
+  service:
+    name: "网关服务"
+    description: "提供API网关、路由转发、负载均衡等功能"
+    features:
+      routing: true
+      load-balancing: true
+      circuit-breaker: true
+      rate-limiting: true
+      cors: true
+  
+  # 网关超时配置
+  httpclient:
+    connect-timeout: 5000
+    response-timeout: 30s
+  httpserver:
+    idle-timeout: 30s
+
+# 网关限流配置
+rate-limit:
+  global:
+    requests-per-second: 1000
+    burst-capacity: 2000
+  per-service:
+    user-service: 200
+    business-service: 150
+    order-service: 300
+    food-service: 250
+    cart-service: 100
+    address-service: 80

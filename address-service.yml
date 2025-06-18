@@ -1,53 +1,92 @@
-# 地址服务配置
+# 地址服务专用配置
 server:
   port: 8006
 
 spring:
   application:
     name: address-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/elm_address?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
-  redis:
-    database: 5  # 地址服务专用数据库
 
-# 地理编码服务配置
-geocoding:
-  api:
-    provider: "baidu"
-    key: "your-geocoding-api-key"
-    timeout: 3000
-    max-retry: 3
-    backup-provider: "amap"
+# 地址服务特定配置
+address:
+  service:
+    name: "地址服务"
+    description: "提供用户地址管理、配送范围计算等功能"
+    features:
+      address-management: true
+      delivery-area-calculation: true
+      distance-calculation: true
 
-# 地理编码服务特定熔断器配置
+# 地址业务规则配置
+rules:
+  address:
+    max-addresses-per-user: 10
+    address-validation-required: true
+    default-delivery-radius: 5.0 # 公里
+    max-delivery-distance: 15.0 # 公里
+    
+# 地图服务配置
+map:
+  provider: "baidu" # 百度地图
+  api-key: "your-map-api-key"
+  geocoding-enabled: true
+  distance-calculation-enabled: true
+  
+# Resilience4j 熔断器配置
 resilience4j:
   circuitbreaker:
     instances:
-      geocoding-service:
-        failure-rate-threshold: 60  # 地理编码服务容错性更高
-        wait-duration-in-open-state: 60s
-        sliding-window-size: 20
+      deliveryAddressService:
+        # 故障率閾值，當故障率達到50%時觸發熔斷
+        failure-rate-threshold: 50
+        # 慢調用率閾值，當慢調用率達到80%時觸發熔斷
+        slow-call-rate-threshold: 80
+        # 慢調用時間閾值，超過2秒視為慢調用
+        slow-call-duration-threshold: 2s
+        # 最小調用次數，只有達到此次數才會計算故障率
+        minimum-number-of-calls: 5
+        # 滑動視窗類型：COUNT_BASED（基於計數）或TIME_BASED（基於時間）
+        sliding-window-type: COUNT_BASED
+        # 滑動視窗大小
+        sliding-window-size: 10
+        # 半開狀態下的測試調用次數
+        permitted-number-of-calls-in-half-open-state: 3
+        # 熔斷器開啟狀態持續時間
+        wait-duration-in-open-state: 10s
+        # 是否自動從開啟狀態轉換到半開狀態
+        automatic-transition-from-open-to-half-open-enabled: true
+        # 記錄異常
+        record-exceptions:
+          - java.lang.Exception
+        # 忽略異常
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+  
+  # 重試配置
   retry:
     instances:
-      geocoding-service:
-        max-attempts: 5
-        wait-duration: 2s
+      deliveryAddressService:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.lang.Exception
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+  
+  # 限流配置
+  ratelimiter:
+    instances:
+      deliveryAddressService:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+        timeout-duration: 3s
 
-# 地址服务配置
-address:
-  service:
-    max-addresses-per-user: 10
-    default-address-type: "HOME"
-    geo-validation-enabled: true
-    max-delivery-distance: 20
-    address-cache-hours: 6
-  # 动态配置
-  config:
-    enable-smart-suggestions: true
-    enable-location-history: true
-    max-search-results: 20
-    auto-complete-min-chars: 2
-    location:
-      enable-gps-validation: true
-      gps-accuracy-threshold: 100
-      enable-poi-search: true 
+# 监控端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,circuitbreakers,circuitbreakerevents
+  endpoint:
+    health:
+      show-details: always 

@@ -1,39 +1,37 @@
-# 商家服务配置
+# 商家服务专用配置
 server:
-  port: 8002
+  port: 8001
 
 spring:
   application:
     name: business-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/elm_business?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
-  redis:
-    database: 1  # 商家服务专用数据库
 
-# 地图API配置
-map:
-  api:
-    provider: "baidu"
-    key: "your-map-api-key"
-    timeout: 5000
-    max-retry: 3
-
-# 商家服务配置
+# 商家服务特定配置
 business:
   service:
-    max-distance-km: 10
-    business-hours-start: "08:00"
-    business-hours-end: "22:00"
-    review-score-threshold: 3.5
-    max-businesses-per-page: 20
-    image-upload-path: /uploads/business/
-    max-image-size: 10MB
-  # 动态配置
-  config:
-    enable-auto-approval: false
-    enable-review-system: true
-    min-delivery-fee: 3.0
-    max-delivery-distance: 15
-    peak-hours:
-      - "11:30-13:30"
-      - "17:30-20:30" 
+    name: "商家服务"
+    description: "提供商家信息管理、餐厅管理等功能"
+    features:
+      restaurant-management: true
+      menu-management: true
+      order-management: true
+
+# 业务规则配置
+rules:
+  business:
+    max-restaurants-per-business: 10
+    min-delivery-fee: 0.0
+    max-delivery-distance: 15.0 # 公里
+    business-hours:
+      default-open: "08:00"
+      default-close: "22:00"
+      
+# 图片上传配置
+upload:
+  path: "/uploads/business/"
+  max-file-size: 5MB
+  allowed-types: 
+    - jpg
+    - jpeg
+    - png
+    - gif 

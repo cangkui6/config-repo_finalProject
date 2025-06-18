@@ -1,150 +1,113 @@
-# Consumer Service 动态配置 - 已增强版本
-consumer:
-  config:
-    serviceName: consumer-service
-    version: 2.1.0
-    environment: dev
-    debugMode: true
-    maxRetryCount: 5
-    timeoutMs: 8000
-    customMessage: "🎉 配置已动态更新 - 集群配置管理中心测试成功！"
-    featureFlags:
-      circuitBreakerEnabled: true
-      cacheEnabled: false
-      monitoringEnabled: true
-      loggingEnabled: true
-
-# 服务配置
+# 消费者服务专用配置
 server:
   port: 9001
 
-# Spring配置
 spring:
   application:
     name: consumer-service
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    connection-timeout: 15000
-    virtual-host: /
-    publisher-confirm-type: correlated
-    publisher-returns: true
-    listener:
-      simple:
-        acknowledge-mode: manual
-        retry:
-          enabled: true
-          max-attempts: 3
-    template:
-      retry:
-        enabled: true
-        initial-interval: 1000
-        max-attempts: 3
-        max-interval: 10000
   cloud:
-    bus:
-      enabled: true
-      refresh:
-        enabled: true
-      env:
-        enabled: true
-      id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
-      # 配置总线事件追踪
-      trace:
-        enabled: true
-    # 配置服务器高可用配置
-    config:
-      fail-fast: false
+    loadbalancer:
       retry:
-        max-attempts: 6
-        initial-interval: 1000
-        max-interval: 2000
-        multiplier: 1.2
-      discovery:
-        enabled: true
-        service-id: config-server
+        enabled: true  # 启用重试机制
+      cache:
+        enabled: true  # 启用缓存
+        ttl: 30000     # 缓存有效期(毫秒)
 
-# Eureka配置
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/,http://localhost:8762/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-    registry-fetch-interval-seconds: 30
-    healthcheck:
+# 消费者服务特定配置
+consumer:
+  service:
+    name: "消费者服务"
+    description: "提供服务消费、负载均衡、熔断保护等功能"
+    features:
+      load-balancing: true
+      circuit-breaker: true
+      service-discovery: true
+      retry-mechanism: true
+
+# Feign客户端特定配置
+feign:
+  compression:
+    request:
       enabled: true
-  instance:
-    prefer-ip-address: true
-    instance-id: ${spring.cloud.client.ip-address}:${server.port}
-    lease-renewal-interval-in-seconds: 10
-    lease-expiration-duration-in-seconds: 30
-    health-check-url-path: /actuator/health
-    metadata-map:
-      version: ${consumer.config.version}
-      environment: ${consumer.config.environment}
-      config-version: "2.1.0"
+      mime-types: text/xml,application/xml,application/json
+      min-request-size: 2048
+    response:
+      enabled: true
 
-# 管理端点配置
+# Ribbon负载均衡配置
+ribbon:
+  ConnectTimeout: 1000
+  ReadTimeout: 5000
+  MaxAutoRetries: 1           # 对当前实例的重试次数
+  MaxAutoRetriesNextServer: 1 # 切换实例的重试次数
+  OkToRetryOnAllOperations: true
+
+# Resilience4j 熔断器配置
+resilience4j:
+  circuitbreaker:
+    instances:
+      default:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-type: count_based
+        sliding-window-size: 10
+      user-service:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 3
+        wait-duration-in-open-state: 10s
+        sliding-window-size: 8
+      business-service:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 3
+        wait-duration-in-open-state: 10s
+        sliding-window-size: 8
+      order-service:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 3
+        wait-duration-in-open-state: 10s
+        sliding-window-size: 8
+      food-service:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 3
+        wait-duration-in-open-state: 10s
+        sliding-window-size: 8
+      cart-service:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 3
+        wait-duration-in-open-state: 10s
+        sliding-window-size: 8
+      address-service:
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 3
+        wait-duration-in-open-state: 10s
+        sliding-window-size: 8
+  retry:
+    instances:
+      default:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
+  timelimiter:
+    instances:
+      default:
+        timeout-duration: 5s
+
+# 服务调用配置
+service:
+  calls:
+    timeout: 5000 # 服务调用超时时间
+    max-retries: 3
+    backoff-delay: 1000 # 重试间隔
+
+# 监控配置
 management:
   endpoints:
     web:
       exposure:
         include: '*'
-      base-path: /actuator
-      cors:
-        allowed-origins: "*"
-        allowed-methods: "GET,POST"
   endpoint:
     health:
-      show-details: always
-      show-components: always
-    refresh:
-      enabled: true
-    bus-refresh:
-      enabled: true
-    info:
-      enabled: true
-    configprops:
-      enabled: true
-  health:
-    rabbit:
-      enabled: true
-    config:
-      enabled: true
-  info:
-    build:
-      enabled: true
-    env:
-      enabled: true
-    git:
-      mode: full
-
-# 日志配置
-logging:
-  level:
-    org.springframework.cloud.config: DEBUG
-    org.springframework.cloud.bus: DEBUG
-    org.springframework.amqp: DEBUG
-    com.elm.consumer: INFO
-    org.springframework.cloud.context: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
-
-# 应用自定义配置
-app:
-  config:
-    cluster:
-      enabled: true
-      nodes:
-        - config-server-8888
-        - config-server-8889
-    refresh:
-      enabled: true
-      interval: 30000
-    monitoring:
-      enabled: ${consumer.config.featureFlags.monitoringEnabled}
-      endpoint: "/actuator/metrics" 
+      show-details: always 

@@ -1,36 +1,15 @@
-# 公共默认配置
-server:
-  servlet:
-    context-path: /
-  tomcat:
-    uri-encoding: UTF-8
-    max-threads: 200
-    min-spare-threads: 10
+# ELM微服务系统 - 全局默认配置
+# 此配置文件包含所有微服务的公共配置
 
+# 数据库公共配置
 spring:
-  application:
-    name: default-app
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/elm_db?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/elm?characterEncoding=utf-8
     username: root
     password: 2254600749@qq.com
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    database-platform: org.hibernate.dialect.MySQL8Dialect
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
-  # Spring Cloud Bus 配置
+    
+  # RabbitMQ公共配置
   rabbitmq:
     host: localhost
     port: 5672
@@ -46,86 +25,54 @@ spring:
         retry:
           enabled: true
           max-attempts: 3
-  # Redis通用配置
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
-  cache:
-    type: redis
 
-# Eureka客户端配置
+# MyBatis公共配置
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.elm.common.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+# Eureka客户端公共配置
 eureka:
   client:
-    serviceUrl:
+    service-url:
       defaultZone: http://localhost:8761/eureka/,http://localhost:8762/eureka/
-    healthcheck:
-      enabled: true
-    registry-fetch-interval-seconds: 30
     fetch-registry: true
     register-with-eureka: true
+    # 健康检查
+    healthcheck:
+      enabled: true
+    # 配置获取服务列表的间隔时间
+    registry-fetch-interval-seconds: 30
   instance:
     prefer-ip-address: true
     instance-id: ${spring.cloud.client.ip-address}:${server.port}
-    lease-renewal-interval-in-seconds: 10
-    lease-expiration-duration-in-seconds: 30
-    health-check-url-path: /actuator/health
+    # 配置心跳间隔
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
 
-# 熔断器配置
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 30s
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        permitted-number-of-calls-in-half-open-state: 3
-        automatic-transition-from-open-to-half-open-enabled: true
-  retry:
-    configs:
-      default:
-        max-attempts: 3
-        wait-duration: 1s
-        retry-exceptions:
-          - java.net.ConnectException
-          - java.net.SocketTimeoutException
-  timeout:
-    configs:
-      default:
-        timeout-duration: 10s
-
-
-
-# Feign配置
+# Feign客户端公共配置
 feign:
-  hystrix:
-    enabled: false
-  circuitbreaker:
-    enabled: true
   client:
     config:
       default:
-        connect-timeout: 5000
-        read-timeout: 10000
+        connectTimeout: 5000
+        readTimeout: 5000
+        loggerLevel: full
+  circuitbreaker:
+    enabled: true
+  compression:
+    request:
+      enabled: true
+      mime-types: text/xml,application/xml,application/json
+      min-request-size: 2048
+    response:
+      enabled: true
+  hystrix:
+    enabled: false
 
-# 日志配置
-logging:
-  level:
-    com.elm: INFO
-    org.springframework.cloud: INFO
-    org.springframework.cloud.bus: DEBUG
-    org.springframework.amqp: INFO
-    feign: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{50}] - %msg%n"
-
-# 管理端点配置
+# 监控端点公共配置
 management:
   endpoints:
     web:
@@ -135,25 +82,23 @@ management:
   endpoint:
     health:
       show-details: always
-    refresh:
-      enabled: true
-    bus-refresh:
-      enabled: true
   health:
-    circuitbreakers:
+    rabbit:
       enabled: true
-  metrics:
-    export:
-      prometheus:
-        enabled: true
 
-# 动态配置示例
-app:
-  config:
-    name: "ELM微服务系统"
-    version: "2.0.0"
-    environment: "development"
-    features:
-      circuit-breaker: true
-      config-refresh: true
-      monitoring: true 
+# 日志配置
+logging:
+  level:
+    org.springframework.cloud: DEBUG
+    org.springframework.web: DEBUG
+    com.elm: INFO
+    feign: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# 应用信息配置
+info:
+  app:
+    name: ELM微服务系统
+    version: 1.0.0
+    description: 饿了么微服务系统配置中心 

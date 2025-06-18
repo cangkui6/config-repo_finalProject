@@ -1,30 +1,53 @@
-# 食品服务配置
+# 食品服务专用配置
 server:
-  port: 8003
+  port: 8004
 
 spring:
   application:
     name: food-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/elm_food?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
-  redis:
-    database: 2  # 食品服务专用数据库
 
-# 食品服务配置
+# 食品服务特定配置
 food:
   service:
-    max-items-per-page: 20
-    image-upload-path: /uploads/food/
-    max-image-size: 5MB
-    allowed-image-types: jpg,jpeg,png,gif,webp
-    enable-watermark: true
-    cache-expire-hours: 2
-  # 动态配置
-  config:
-    enable-recommendation: true
-    enable-nutrition-info: true
-    max-categories: 50
-    featured-foods-count: 10
-    search:
-      max-results: 100
-      enable-fuzzy-search: true 
+    name: "食品服务"
+    description: "提供食品信息管理、分类管理等功能"
+    features:
+      food-management: true
+      category-management: true
+      inventory-tracking: true
+      
+# 食品业务规则配置
+rules:
+  food:
+    max-categories: 20
+    max-foods-per-category: 100
+    price-precision: 2 # 价格小数位数
+    inventory-alert-threshold: 10
+    food-image-required: true
+    
+# 食品分类配置
+categories:
+  default:
+    - "热销推荐"
+    - "主食"
+    - "小菜"
+    - "汤类" 
+    - "饮品"
+    - "甜品"
+    
+# 图片上传配置
+upload:
+  food-images:
+    path: "/uploads/food/"
+    max-file-size: 2MB
+    allowed-types:
+      - jpg
+      - jpeg
+      - png
+    max-images-per-food: 5
+    
+# 库存管理配置
+inventory:
+  auto-update: true
+  low-stock-notification: true
+  out-of-stock-auto-hide: true 

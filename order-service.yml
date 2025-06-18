@@ -1,47 +1,49 @@
-# 订单服务配置
+# 订单服务专用配置
 server:
-  port: 8004
+  port: 8003
 
 spring:
   application:
     name: order-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/elm_order?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
-  redis:
-    database: 3  # 订单服务专用数据库
 
-# 订单服务特定熔断器配置
-resilience4j:
-  circuitbreaker:
-    instances:
-      payment-service:
-        failure-rate-threshold: 30  # 支付服务要求更高可靠性
-        wait-duration-in-open-state: 60s
-        sliding-window-size: 20
-  retry:
-    instances:
-      payment-service:
-        max-attempts: 5
-        wait-duration: 2s
-
-# 订单服务配置
+# 订单服务特定配置
 order:
   service:
-    timeout-minutes: 30
-    max-order-items: 50
-    delivery-fee: 5.0
-    min-order-amount: 20.0
-    max-orders-per-page: 20
-    auto-confirm-hours: 24
-    refund-timeout-hours: 72
-  # 动态配置
-  config:
-    enable-auto-dispatch: true
-    enable-order-tracking: true
-    payment-timeout-minutes: 15
+    name: "订单服务"
+    description: "提供订单创建、状态管理、支付等功能"
+    features:
+      order-creation: true
+      payment-processing: true
+      order-tracking: true
+      
+# 订单业务规则配置
+rules:
+  order:
+    max-items-per-order: 50
+    order-timeout-minutes: 30
+    auto-confirm-minutes: 15
     delivery-time-slots:
-      - "09:00-12:00"
-      - "12:00-15:00"
-      - "15:00-18:00"
-      - "18:00-21:00"
-    status-update-interval: 30 
+      - "立即送达"
+      - "30分钟内"
+      - "1小时内"
+      - "2小时内"
+    payment-methods:
+      - "支付宝"
+      - "微信支付"
+      - "银行卡"
+      - "现金"
+
+# 支付配置
+payment:
+  timeout-seconds: 300 # 5分钟支付超时
+  retry-attempts: 3
+  
+# 订单状态配置
+status:
+  flow:
+    - "待支付"
+    - "待确认"
+    - "制作中"
+    - "配送中"
+    - "已完成"
+    - "已取消" 
